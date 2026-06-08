@@ -64,13 +64,13 @@ The database consists of 8 core tables with key-constraint integrity:
 erDiagram
     User ||--|| UserProfile : "has profile"
     User ||--o| Employee : "linked to"
-    Department }o--o| User : "managed by"
+    Department }o--|| User : "managed by"
     Employee }o--o| Department : "belongs to"
-    Project }o--o| User : "managed by"
-    Project }o--m| Employee : "contains members"
+    Project }o--|| User : "managed by"
+    Project }o--o{ Employee : "contains members"
     Attendance }o--|| Employee : "logged for"
     LeaveRequest }o--|| Employee : "requested by"
-    LeaveRequest }o--o| User : "actioned by"
+    LeaveRequest }o--|| User : "actioned by"
     PerformanceReview }o--|| Employee : "reviewed"
     PerformanceReview }o--o| User : "evaluated by"
     ActivityLog }o--|| User : "audited by"
@@ -92,19 +92,19 @@ erDiagram
 
 Authorization is enforced at both the view level (using a custom `role_required` decorator) and template level (using conditional template logic).
 
-| System Resource / View | Admin | Manager | Employee |
-| :--- | :---: | :---: | :---: |
-| **System Settings & Audit Trail** | Full Read/Write | Denied | Denied |
-| **Role Adjustments & Status Toggles** | Full Read/Write | Denied | Denied |
-| **Department CRUD** | Full Read/Write | Read-Only | Read-Only |
-| **Employee Creation / Deletion** | Full Read/Write | Denied | Denied |
-| **Employee Details View** | Full Read | Full Read | Read-Only (Self Profile) |
-| **Project CRUD** | Full Read/Write | Full Read/Write | Read-Only (Assigned) |
-| **Performance Review CRUD** | Full Read/Write | Create / Edit | Read-Only (Self Profile) |
-| **Leave Approvals & Actions** | Approve / Reject | Approve / Reject | Denied |
-| **Leave Application** | Denied | Denied | Apply / Track |
-| **Attendance Check-in / Out** | Denied | Denied | Check-in / Out |
-| **System Reports & CSV Exports** | Export All | Export Team | Denied |
+| System Resource / View                |      Admin       |     Manager      |         Employee         |
+| :------------------------------------ | :--------------: | :--------------: | :----------------------: |
+| **System Settings & Audit Trail**     | Full Read/Write  |      Denied      |          Denied          |
+| **Role Adjustments & Status Toggles** | Full Read/Write  |      Denied      |          Denied          |
+| **Department CRUD**                   | Full Read/Write  |    Read-Only     |        Read-Only         |
+| **Employee Creation / Deletion**      | Full Read/Write  |      Denied      |          Denied          |
+| **Employee Details View**             |    Full Read     |    Full Read     | Read-Only (Self Profile) |
+| **Project CRUD**                      | Full Read/Write  | Full Read/Write  |   Read-Only (Assigned)   |
+| **Performance Review CRUD**           | Full Read/Write  |  Create / Edit   | Read-Only (Self Profile) |
+| **Leave Approvals & Actions**         | Approve / Reject | Approve / Reject |          Denied          |
+| **Leave Application**                 |      Denied      |      Denied      |      Apply / Track       |
+| **Attendance Check-in / Out**         |      Denied      |      Denied      |      Check-in / Out      |
+| **System Reports & CSV Exports**      |    Export All    |   Export Team    |          Denied          |
 
 ---
 
