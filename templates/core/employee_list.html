@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Employees Directory - EPMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Employee Directory</h1>
+            <p class="text-slate-500 text-sm">View and manage employee profile records and designations</p>
+        </div>
+        {% if request.user.userprofile.role == 'ADMIN' %}
+            <a href="{% url 'employee_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Add Employee</span>
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Table Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+        <table class="w-full text-left border-collapse datatable">
+            <thead>
+                <tr class="border-b border-slate-100 text-slate-400 text-xs font-semibold uppercase">
+                    <th class="py-3 px-4">Employee</th>
+                    <th class="py-3 px-4">Employee ID</th>
+                    <th class="py-3 px-4">Department</th>
+                    <th class="py-3 px-4">Designation</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-slate-700 text-sm divide-y divide-slate-50">
+                {% for emp in employees %}
+                    <tr>
+                        <td class="py-4 px-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold border border-slate-200 overflow-hidden">
+                                    {% if emp.profile_picture %}
+                                        <img src="{{ emp.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+                                    {% else %}
+                                        {{ emp.full_name|slice:":1"|upper }}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 leading-tight">{{ emp.full_name }}</h4>
+                                    <p class="text-xs text-slate-400 font-medium">{{ emp.email }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-4 font-semibold text-slate-700">{{ emp.employee_id }}</td>
+                        <td class="py-4 px-4 font-medium">{{ emp.department.name|default:"N/A" }}</td>
+                        <td class="py-4 px-4 text-slate-500">{{ emp.designation }}</td>
+                        <td class="py-4 px-4">
+                            {% if emp.status == 'ACTIVE' %}
+                                <span class="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">Active</span>
+                            {% else %}
+                                <span class="bg-red-50 text-red-700 px-2.5 py-0.5 rounded-full text-xs font-semibold">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="py-4 px-4 text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <a href="{% url 'employee_detail' emp.pk %}" class="text-slate-500 hover:text-blue-600 p-1.5 hover:bg-blue-50 rounded transition-colors" title="View Details">
+                                    <i class="fa-solid fa-eye text-base"></i>
+                                </a>
+                                {% if request.user.userprofile.role == 'ADMIN' %}
+                                    <a href="{% url 'employee_edit' emp.pk %}" class="text-slate-500 hover:text-indigo-600 p-1.5 hover:bg-indigo-50 rounded transition-colors" title="Edit Profile">
+                                        <i class="fa-solid fa-pen-to-square text-base"></i>
+                                    </a>
+                                    <form action="{% url 'employee_delete' emp.pk %}" method="post" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-slate-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded transition-colors confirm-delete cursor-pointer" data-entity="Employee" title="Delete">
+                                            <i class="fa-solid fa-trash-can text-base"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-slate-400 italic">No employees found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

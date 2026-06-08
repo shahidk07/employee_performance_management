@@ -1,0 +1,789 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}EPMS - Interactive Analytics{% endblock %}
+
+{% block extra_head %}
+<style>
+    .chart-container {
+        position: relative;
+        background-color: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        border: 1px solid #f1f5f9;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .chart-container:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.08);
+    }
+    svg {
+        width: 100%;
+        height: 100%;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .node circle {
+        fill: #3b82f6;
+        stroke: #fff;
+        stroke-width: 2px;
+        cursor: pointer;
+    }
+    .node text {
+        font-size: 11px;
+        font-weight: 500;
+        fill: #1e293b;
+    }
+    .link {
+        fill: none;
+        stroke: #cbd5e1;
+        stroke-width: 1.5px;
+    }
+    .d3-tooltip {
+        position: absolute;
+        background: #0f172a;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        pointer-events: none;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transition: opacity 0.15s ease;
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Breadcrumb & Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Interactive Analytics</h1>
+            <p class="text-sm text-slate-500">Live graphical visualizations of organizational performance, projects, and attendance using D3.js.</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-3 py-1.5 rounded-lg">
+            <span class="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <span>Real-time System Data</span>
+        </div>
+    </div>
+
+    <!-- Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- 1. Department Distribution -->
+        <div class="chart-container">
+            <h3 class="text-base font-semibold text-slate-800 mb-4"><i class="fa-solid fa-sitemap text-blue-500 mr-2"></i>Department-wise Employee Distribution</h3>
+            <div id="dept-chart-container" class="h-80 flex items-center justify-center">
+                <svg id="dept-chart"></svg>
+            </div>
+        </div>
+
+        <!-- 2. Attendance Trends -->
+        <div class="chart-container">
+            <h3 class="text-base font-semibold text-slate-800 mb-4"><i class="fa-solid fa-chart-line text-green-500 mr-2"></i>Attendance Trends (30 Days)</h3>
+            <div id="attendance-trends-container" class="h-80">
+                <svg id="attendance-trends"></svg>
+            </div>
+        </div>
+
+        <!-- 3. Monthly Attendance Analytics -->
+        <div class="chart-container">
+            <h3 class="text-base font-semibold text-slate-800 mb-4"><i class="fa-solid fa-chart-bar text-amber-500 mr-2"></i>Monthly Attendance Analytics</h3>
+            <div id="monthly-att-container" class="h-80">
+                <svg id="monthly-att"></svg>
+            </div>
+        </div>
+
+        <!-- 4. Performance Reviews Trends -->
+        <div class="chart-container">
+            <h3 class="text-base font-semibold text-slate-800 mb-4"><i class="fa-solid fa-star-half-stroke text-purple-500 mr-2"></i>Performance Score Trends</h3>
+            <div id="performance-trends-container" class="h-80">
+                <svg id="performance-trends"></svg>
+            </div>
+        </div>
+
+        <!-- 5. Project Completion Stats -->
+        <div class="chart-container">
+            <h3 class="text-base font-semibold text-slate-800 mb-4"><i class="fa-solid fa-diagram-project text-cyan-500 mr-2"></i>Project Completion Statistics</h3>
+            <div id="project-stats-container" class="h-80">
+                <svg id="project-stats"></svg>
+            </div>
+        </div>
+
+        <!-- 6. Employee Performance Comparison -->
+        <div class="chart-container">
+            <h3 class="text-base font-semibold text-slate-800 mb-4"><i class="fa-solid fa-scale-balanced text-indigo-500 mr-2"></i>Employee Performance Comparison</h3>
+            <div id="perf-comp-container" class="h-80">
+                <svg id="perf-comp"></svg>
+            </div>
+        </div>
+
+        <!-- 7. Organization Hierarchy Tree (Full Width) -->
+        <div class="chart-container lg:col-span-2">
+            <h3 class="text-base font-semibold text-slate-800 mb-4"><i class="fa-solid fa-users-viewfinder text-rose-500 mr-2"></i>Organization Hierarchy Tree</h3>
+            <div id="org-tree-container" class="h-[450px] overflow-auto border border-slate-100 rounded-xl bg-slate-50/50">
+                <svg id="org-tree"></svg>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Custom Tooltip Node -->
+<div id="tooltip" class="d3-tooltip"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        const tooltip = d3.select("#tooltip");
+
+        // Fetch API data
+        $.getJSON("{% url 'api_dashboard_data' %}", function(data) {
+            
+            // 1. Department Distribution Donut Chart
+            drawDeptChart(data.departments);
+
+            // 2. Attendance Trends (Line chart)
+            drawAttendanceTrends(data.attendance_trends);
+
+            // 3. Monthly Attendance Analytics (Grouped Bar)
+            drawMonthlyAttendance(data.monthly_attendance);
+
+            // 4. Performance Review Trends (Scatter/Line)
+            drawPerformanceTrends(data.performance_trends);
+
+            // 5. Project Status Distribution (Horizontal Bar)
+            drawProjectStats(data.projects);
+
+            // 6. Employee Performance Comparison (Multi-bar chart)
+            drawPerformanceComparison(data.performance_comparison);
+
+            // 7. Organization Tree
+            drawOrgTree(data.hierarchy);
+        });
+
+        // ---------------------------------------------------
+        // Donut Chart - Department Distribution
+        // ---------------------------------------------------
+        function drawDeptChart(data) {
+            const svg = d3.select("#dept-chart");
+            const container = document.getElementById("dept-chart-container");
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const radius = Math.min(width, height) / 2.2;
+            
+            svg.attr("width", width).attr("height", height);
+            const g = svg.append("g").attr("transform", `translate(${width / 2}, ${height / 2})`);
+
+            const color = d3.scaleOrdinal()
+                .domain(data.map(d => d.department))
+                .range(d3.schemeBlues[9].slice(3, 8));
+
+            const pie = d3.pie()
+                .value(d => d.count)
+                .sort(null);
+
+            const arc = d3.arc()
+                .innerRadius(radius * 0.55)
+                .outerRadius(radius);
+
+            const arcHover = d3.arc()
+                .innerRadius(radius * 0.55)
+                .outerRadius(radius * 1.08);
+
+            const arcs = g.selectAll(".arc")
+                .data(pie(data))
+                .enter().append("g")
+                .attr("class", "arc");
+
+            arcs.append("path")
+                .attr("d", arc)
+                .attr("fill", d => color(d.data.department))
+                .attr("stroke", "#ffffff")
+                .attr("stroke-width", 2)
+                .style("cursor", "pointer")
+                .on("mouseover", function(event, d) {
+                    d3.select(this).transition().duration(200).attr("d", arcHover);
+                    tooltip.style("opacity", 1)
+                        .html(`<strong>${d.data.department}</strong><br>${d.data.count} Employees`);
+                })
+                .on("mousemove", function(event) {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(this).transition().duration(200).attr("d", arc);
+                    tooltip.style("opacity", 0);
+                });
+
+            // Center text
+            g.append("text")
+                .attr("text-anchor", "middle")
+                .attr("dy", "-0.2em")
+                .style("font-size", "12px")
+                .style("font-weight", "600")
+                .style("fill", "#64748b")
+                .text("Total");
+
+            const totalCount = d3.sum(data, d => d.count);
+            g.append("text")
+                .attr("text-anchor", "middle")
+                .attr("dy", "0.8em")
+                .style("font-size", "22px")
+                .style("font-weight", "700")
+                .style("fill", "#1e293b")
+                .text(totalCount);
+        }
+
+        // ---------------------------------------------------
+        // Line Chart - Attendance Trends (30 Days)
+        // ---------------------------------------------------
+        function drawAttendanceTrends(data) {
+            if (!data.length) return;
+            const svg = d3.select("#attendance-trends");
+            const container = document.getElementById("attendance-trends-container");
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = {top: 20, right: 30, bottom: 40, left: 40};
+            
+            svg.attr("width", width).attr("height", height);
+
+            const x = d3.scaleTime()
+                .domain(d3.extent(data, d => new Date(d.date)))
+                .range([margin.left, width - margin.right]);
+
+            const y = d3.scaleLinear()
+                .domain([0, 100])
+                .range([height - margin.bottom, margin.top]);
+
+            // Axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x).ticks(6).tickFormat(d3.timeFormat("%b %d")))
+                .call(g => g.select(".domain").attr("stroke", "#e2e8f0"))
+                .call(g => g.selectAll(".tick line").attr("stroke", "#e2e8f0"));
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y).ticks(5).tickFormat(d => d + "%"))
+                .call(g => g.select(".domain").attr("stroke", "none"))
+                .call(g => g.selectAll(".tick line").attr("stroke", "#f1f5f9").attr("x2", width));
+
+            // Line
+            const line = d3.line()
+                .x(d => x(new Date(d.date)))
+                .y(d => y(d.rate))
+                .curve(d3.curveMonotoneX);
+
+            // Area Gradient
+            const gradientId = "attendance-grad";
+            const defs = svg.append("defs");
+            const linearGradient = defs.append("linearGradient")
+                .attr("id", gradientId)
+                .attr("x1", "0%").attr("y1", "0%")
+                .attr("x2", "0%").attr("y2", "100%");
+            linearGradient.append("stop").attr("offset", "0%").attr("stop-color", "#22c55e").attr("stop-opacity", 0.25);
+            linearGradient.append("stop").attr("offset", "100%").attr("stop-color", "#22c55e").attr("stop-opacity", 0.0);
+
+            // Area
+            const area = d3.area()
+                .x(d => x(new Date(d.date)))
+                .y0(height - margin.bottom)
+                .y1(d => y(d.rate))
+                .curve(d3.curveMonotoneX);
+
+            svg.append("path")
+                .datum(data)
+                .attr("fill", `url(#${gradientId})`)
+                .attr("d", area);
+
+            svg.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "#22c55e")
+                .attr("stroke-width", 2.5)
+                .attr("d", line);
+
+            // Dots
+            svg.selectAll(".dot")
+                .data(data)
+                .enter().append("circle")
+                .attr("cx", d => x(new Date(d.date)))
+                .attr("cy", d => y(d.rate))
+                .attr("r", 3.5)
+                .attr("fill", "#22c55e")
+                .attr("stroke", "#ffffff")
+                .attr("stroke-width", 1.5)
+                .style("cursor", "pointer")
+                .on("mouseover", function(event, d) {
+                    d3.select(this).transition().duration(100).attr("r", 5.5);
+                    tooltip.style("opacity", 1)
+                        .html(`<strong>${d.date}</strong><br>Attendance: ${d.rate}%`);
+                })
+                .on("mousemove", function(event) {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(this).transition().duration(100).attr("r", 3.5);
+                    tooltip.style("opacity", 0);
+                });
+        }
+
+        // ---------------------------------------------------
+        // Grouped Bar Chart - Monthly Attendance Analytics
+        // ---------------------------------------------------
+        function drawMonthlyAttendance(data) {
+            const svg = d3.select("#monthly-att");
+            const container = document.getElementById("monthly-att-container");
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = {top: 20, right: 30, bottom: 40, left: 40};
+            
+            svg.attr("width", width).attr("height", height);
+
+            const categories = ["Present", "Absent", "Half Day", "Leave"];
+            const colors = ["#3b82f6", "#ef4444", "#f59e0b", "#64748b"];
+
+            const x0 = d3.scaleBand()
+                .domain(data.map(d => d.month))
+                .rangeRound([margin.left, width - margin.right])
+                .paddingInner(0.2);
+
+            const x1 = d3.scaleBand()
+                .domain(categories)
+                .rangeRound([0, x0.bandwidth()])
+                .padding(0.05);
+
+            const maxVal = d3.max(data, d => Math.max(d.Present, d.Absent, d.Half, d.Leave)) || 25;
+            const y = d3.scaleLinear()
+                .domain([0, maxVal * 1.1])
+                .range([height - margin.bottom, margin.top]);
+
+            // Axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x0))
+                .call(g => g.select(".domain").attr("stroke", "#e2e8f0"));
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y).ticks(5))
+                .call(g => g.select(".domain").attr("stroke", "none"))
+                .call(g => g.selectAll(".tick line").attr("stroke", "#f1f5f9").attr("x2", width));
+
+            // Bars
+            svg.append("g")
+                .selectAll("g")
+                .data(data)
+                .join("g")
+                .attr("transform", d => `translate(${x0(d.month)},0)`)
+                .selectAll("rect")
+                .data(d => categories.map(key => ({key, value: d[key]})))
+                .join("rect")
+                .attr("x", d => x1(d.key))
+                .attr("y", d => y(d.value))
+                .attr("width", x1.bandwidth())
+                .attr("height", d => y(0) - y(d.value))
+                .attr("fill", d => colors[categories.indexOf(d.key)])
+                .attr("rx", 2)
+                .on("mouseover", function(event, d) {
+                    tooltip.style("opacity", 1)
+                        .html(`<strong>${d.key}</strong>: ${d.value} Records`);
+                })
+                .on("mousemove", function(event) {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
+        }
+
+        // ---------------------------------------------------
+        // Scatter / Line - Performance Trends
+        // ---------------------------------------------------
+        function drawPerformanceTrends(data) {
+            const svg = d3.select("#performance-trends");
+            const container = document.getElementById("performance-trends-container");
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = {top: 20, right: 30, bottom: 40, left: 40};
+            
+            svg.attr("width", width).attr("height", height);
+
+            if (!data.length) {
+                svg.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", height / 2)
+                    .attr("text-anchor", "middle")
+                    .text("No review history found to plot.");
+                return;
+            }
+
+            const x = d3.scaleTime()
+                .domain(d3.extent(data, d => new Date(d.date)))
+                .range([margin.left, width - margin.right]);
+
+            const y = d3.scaleLinear()
+                .domain([1, 5])
+                .range([height - margin.bottom, margin.top]);
+
+            // Axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x).ticks(5).tickFormat(d3.timeFormat("%b %y")))
+                .call(g => g.select(".domain").attr("stroke", "#e2e8f0"));
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y).ticks(5))
+                .call(g => g.select(".domain").attr("stroke", "none"))
+                .call(g => g.selectAll(".tick line").attr("stroke", "#f1f5f9").attr("x2", width));
+
+            const line = d3.line()
+                .x(d => x(new Date(d.date)))
+                .y(d => y(d.score));
+
+            svg.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "#a855f7")
+                .attr("stroke-width", 2)
+                .attr("d", line);
+
+            // Nodes
+            svg.selectAll(".dot")
+                .data(data)
+                .enter().append("circle")
+                .attr("cx", d => x(new Date(d.date)))
+                .attr("cy", d => y(d.score))
+                .attr("r", 5)
+                .attr("fill", "#a855f7")
+                .attr("stroke", "#ffffff")
+                .attr("stroke-width", 1.5)
+                .on("mouseover", function(event, d) {
+                    tooltip.style("opacity", 1)
+                        .html(`<strong>${d.employee}</strong><br>Score: ${d.score} Stars<br>Date: ${d.date}`);
+                })
+                .on("mousemove", function(event) {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
+        }
+
+        // ---------------------------------------------------
+        // Horizontal Bar Chart - Project Status Distribution
+        // ---------------------------------------------------
+        function drawProjectStats(data) {
+            const svg = d3.select("#project-stats");
+            const container = document.getElementById("project-stats-container");
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = {top: 20, right: 30, bottom: 40, left: 80};
+            
+            svg.attr("width", width).attr("height", height);
+
+            const colorMap = {
+                'PLANNING': '#06b6d4',
+                'ACTIVE': '#3b82f6',
+                'COMPLETED': '#10b981',
+                'ON_HOLD': '#f59e0b'
+            };
+
+            const y = d3.scaleBand()
+                .domain(data.map(d => d.status))
+                .range([margin.top, height - margin.bottom])
+                .padding(0.3);
+
+            const x = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.count) || 5])
+                .range([margin.left, width - margin.right]);
+
+            // Axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x).ticks(5).tickSizeOuter(0))
+                .call(g => g.select(".domain").attr("stroke", "#e2e8f0"));
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y))
+                .call(g => g.select(".domain").attr("stroke", "#e2e8f0"));
+
+            svg.selectAll(".bar")
+                .data(data)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("y", d => y(d.status))
+                .attr("x", margin.left)
+                .attr("height", y.bandwidth())
+                .attr("width", d => x(d.count) - margin.left)
+                .attr("fill", d => colorMap[d.status] || '#cbd5e1')
+                .attr("rx", 4)
+                .on("mouseover", function(event, d) {
+                    tooltip.style("opacity", 1)
+                        .html(`Status: <strong>${d.status}</strong><br>Count: ${d.count} Projects`);
+                })
+                .on("mousemove", function(event) {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
+        }
+
+        // ---------------------------------------------------
+        // Multi-Bar Chart - Employee Performance Comparison
+        // ---------------------------------------------------
+        function drawPerformanceComparison(data) {
+            const svg = d3.select("#perf-comp");
+            const container = document.getElementById("perf-comp-container");
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            const margin = {top: 20, right: 30, bottom: 40, left: 40};
+            
+            svg.attr("width", width).attr("height", height);
+
+            if (!data.length) {
+                svg.append("text")
+                    .attr("x", width / 2)
+                    .attr("y", height / 2)
+                    .attr("text-anchor", "middle")
+                    .text("Add employee reviews to display comparison.");
+                return;
+            }
+
+            const metrics = ["Productivity", "Attendance", "Teamwork", "Communication", "Technical"];
+            const colors = ["#6366f1", "#4f46e5", "#4338ca", "#3730a3", "#312e81"];
+
+            const x0 = d3.scaleBand()
+                .domain(data.map(d => d.name))
+                .rangeRound([margin.left, width - margin.right])
+                .paddingInner(0.25);
+
+            const x1 = d3.scaleBand()
+                .domain(metrics)
+                .rangeRound([0, x0.bandwidth()])
+                .padding(0.05);
+
+            const y = d3.scaleLinear()
+                .domain([0, 5])
+                .range([height - margin.bottom, margin.top]);
+
+            // Axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height - margin.bottom})`)
+                .call(d3.axisBottom(x0))
+                .call(g => g.select(".domain").attr("stroke", "#e2e8f0"));
+
+            svg.append("g")
+                .attr("transform", `translate(${margin.left},0)`)
+                .call(d3.axisLeft(y).ticks(5))
+                .call(g => g.select(".domain").attr("stroke", "none"))
+                .call(g => g.selectAll(".tick line").attr("stroke", "#f1f5f9").attr("x2", width));
+
+            svg.append("g")
+                .selectAll("g")
+                .data(data)
+                .join("g")
+                .attr("transform", d => `translate(${x0(d.name)},0)`)
+                .selectAll("rect")
+                .data(d => metrics.map(key => ({key, value: d[key]})))
+                .join("rect")
+                .attr("x", d => x1(d.key))
+                .attr("y", d => y(d.value))
+                .attr("width", x1.bandwidth())
+                .attr("height", d => y(0) - y(d.value))
+                .attr("fill", d => colors[metrics.indexOf(d.key)])
+                .attr("rx", 1.5)
+                .on("mouseover", function(event, d) {
+                    tooltip.style("opacity", 1)
+                        .html(`Metric: <strong>${d.key}</strong><br>Score: ${d.value} Stars`);
+                })
+                .on("mousemove", function(event) {
+                    tooltip.style("left", (event.pageX + 10) + "px")
+                           .style("top", (event.pageY - 20) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.style("opacity", 0);
+                });
+        }
+
+        // ---------------------------------------------------
+        // D3 collapsible node-link Organization tree Chart
+        // ---------------------------------------------------
+        function drawOrgTree(treeData) {
+            const svg = d3.select("#org-tree");
+            const container = document.getElementById("org-tree-container");
+            const width = Math.max(container.clientWidth, 900);
+            const height = 400;
+
+            svg.attr("width", width).attr("height", height);
+
+            const margin = {top: 20, right: 90, bottom: 30, left: 90};
+            const innerWidth = width - margin.left - margin.right;
+            const innerHeight = height - margin.top - margin.bottom;
+
+            const g = svg.append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Declare a tree layout and assign sizes
+            const tree = d3.tree().size([innerHeight, innerWidth]);
+
+            // Assigns parent, children, height, depth
+            const root = d3.hierarchy(treeData, d => d.children);
+            root.x0 = innerHeight / 2;
+            root.y0 = 0;
+
+            updateTree(root);
+
+            function updateTree(source) {
+                // Assign new node positions
+                const treeData = tree(root);
+
+                // Compute the new tree layout
+                const nodes = treeData.descendants();
+                const links = treeData.descendants().slice(1);
+
+                // Normalize for fixed-depth
+                nodes.forEach(d => d.y = d.depth * 180);
+
+                // ----------------------------------
+                // Nodes Section
+                // ----------------------------------
+                const node = g.selectAll('g.node')
+                    .data(nodes, d => d.id || (d.id = ++i));
+
+                let i = 0;
+
+                // Enter new nodes at the parent's previous position
+                const nodeEnter = node.enter().append('g')
+                    .attr('class', 'node')
+                    .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                    .on('click', (event, d) => {
+                        if (d.children) {
+                            d._children = d.children;
+                            d.children = null;
+                        } else {
+                            d.children = d._children;
+                            d._children = null;
+                        }
+                        updateTree(d);
+                    });
+
+                // Add Circle for the nodes
+                nodeEnter.append('circle')
+                    .attr('class', 'node')
+                    .attr('r', 1e-6)
+                    .style("fill", d => d._children ? "#60a5fa" : "#ffffff")
+                    .style("stroke", d => {
+                        if (d.data.role === 'ADMIN') return '#ef4444';
+                        if (d.data.role === 'MANAGER') return '#f59e0b';
+                        if (d.data.role === 'EMPLOYEE') return '#3b82f6';
+                        return '#10b981';
+                    })
+                    .style("stroke-width", "2.5px");
+
+                // Add labels for the nodes
+                nodeEnter.append('text')
+                    .attr("dy", ".35em")
+                    .attr("x", d => d.children || d._children ? -13 : 13)
+                    .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                    .text(d => d.data.name)
+                    .clone(true).lower()
+                    .attr("stroke", "white")
+                    .attr("stroke-width", 3);
+
+                // Subtitle designations
+                nodeEnter.append('text')
+                    .attr("dy", "1.4em")
+                    .attr("x", d => d.children || d._children ? -13 : 13)
+                    .attr("text-anchor", d => d.children || d._children ? "end" : "start")
+                    .style("font-size", "9px")
+                    .style("fill", "#64748b")
+                    .text(d => d.data.title);
+
+                // UPDATE
+                const nodeUpdate = nodeEnter.merge(node);
+
+                // Transition to the proper position
+                nodeUpdate.transition()
+                    .duration(500)
+                    .attr("transform", d => `translate(${d.y},${d.x})`);
+
+                // Update the node attributes and style
+                nodeUpdate.select('circle.node')
+                    .attr('r', 6)
+                    .style("fill", d => d._children ? "#3b82f6" : "#ffffff")
+                    .attr('cursor', 'pointer');
+
+                // Remove any exiting nodes
+                const nodeExit = node.exit().transition()
+                    .duration(500)
+                    .attr("transform", d => `translate(${source.y},${source.x})`)
+                    .remove();
+
+                nodeExit.select('circle')
+                    .attr('r', 1e-6);
+
+                nodeExit.select('text')
+                    .style('fill-opacity', 1e-6);
+
+                // ----------------------------------
+                // Links Section
+                // ----------------------------------
+                const link = g.selectAll('path.link')
+                    .data(links, d => d.id);
+
+                // Enter any new links at the parent's previous position
+                const linkEnter = link.enter().insert('path', "g")
+                    .attr("class", "link")
+                    .attr('d', d => {
+                        const o = {x: source.x0, y: source.y0};
+                        return diagonal(o, o);
+                    });
+
+                // UPDATE
+                const linkUpdate = linkEnter.merge(link);
+
+                // Transition back to the parent element position
+                linkUpdate.transition()
+                    .duration(500)
+                    .attr('d', d => diagonal(d, d.parent));
+
+                // Remove any exiting links
+                link.exit().transition()
+                    .duration(500)
+                    .attr('d', d => {
+                        const o = {x: source.x, y: source.y};
+                        return diagonal(o, o);
+                    })
+                    .remove();
+
+                // Store the old positions for transition
+                nodes.forEach(d => {
+                    d.x0 = d.x;
+                    d.y0 = d.y;
+                });
+
+                // Creates a curved (diagonal) path from parent to the child nodes
+                function diagonal(s, d) {
+                    return `M ${s.y} ${s.x}
+                            C ${(s.y + d.y) / 2} ${s.x},
+                              ${(s.y + d.y) / 2} ${d.x},
+                              ${d.y} ${d.x}`;
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

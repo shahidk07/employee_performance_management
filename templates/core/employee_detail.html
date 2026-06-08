@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %} {{ employee.full_name }} - Profile Details - EPMS {% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <a href="{% url 'employee_list' %}" class="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1 mb-2">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Back to Employees</span>
+            </a>
+            <h1 class="text-2xl font-bold text-slate-800">Employee Profile</h1>
+        </div>
+        {% if request.user.userprofile.role == 'ADMIN' %}
+            <div class="flex gap-2">
+                <a href="{% url 'employee_edit' employee.pk %}" class="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg border border-slate-200 shadow-sm text-sm font-semibold flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-pen-to-square text-blue-500"></i>
+                    <span>Edit Profile</span>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Info Block Header Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 flex flex-col md:flex-row items-center md:items-start gap-6 shadow-sm">
+        <div class="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-white text-3xl font-bold border-2 border-slate-200 overflow-hidden relative shadow-inner">
+            {% if employee.profile_picture %}
+                <img src="{{ employee.profile_picture.url }}" alt="Profile" class="w-full h-full object-cover">
+            {% else %}
+                {{ employee.full_name|slice:":1"|upper }}
+            {% endif %}
+        </div>
+        
+        <div class="flex-1 text-center md:text-left space-y-2">
+            <div class="flex flex-col md:flex-row md:items-center gap-2 justify-center md:justify-start">
+                <h2 class="text-xl font-bold text-slate-800 leading-tight">{{ employee.full_name }}</h2>
+                <span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold {% if employee.status == 'ACTIVE' %}bg-green-50 text-green-700{% else %}bg-red-50 text-red-700{% endif %}">
+                    {{ employee.get_status_display }}
+                </span>
+            </div>
+            
+            <p class="text-sm text-slate-500">
+                <span class="font-semibold text-slate-700">{{ employee.designation }}</span> • 
+                Department: <span class="font-semibold text-blue-600">{{ employee.department.name|default:"N/A" }}</span>
+            </p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-xs text-slate-500 pt-2">
+                <div><i class="fa-solid fa-id-badge text-blue-500 w-5"></i><strong>Employee ID:</strong> {{ employee.employee_id }}</div>
+                <div><i class="fa-solid fa-envelope text-blue-500 w-5"></i><strong>Email:</strong> {{ employee.email }}</div>
+                <div><i class="fa-solid fa-phone text-blue-500 w-5"></i><strong>Phone:</strong> {{ employee.phone_number|default:"N/A" }}</div>
+                <div><i class="fa-solid fa-calendar-check text-blue-500 w-5"></i><strong>Joined Date:</strong> {{ employee.date_joined }}</div>
+                <div><i class="fa-solid fa-money-bill-wave text-blue-500 w-5"></i><strong>Salary:</strong> ${{ employee.salary }}</div>
+                <div><i class="fa-solid fa-user-shield text-blue-500 w-5"></i><strong>System Account:</strong> {{ employee.user.username }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <!-- Attendance rate -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between shadow-sm">
+            <div class="space-y-1">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Attendance Rate</span>
+                <h3 class="text-2xl font-extrabold text-slate-800">{{ att_rate }}{% if att_rate != "N/A" %}%{% endif %}</h3>
+            </div>
+            <div class="bg-blue-50 text-blue-600 p-3 rounded-lg"><i class="fa-solid fa-calendar-days text-xl"></i></div>
+        </div>
+
+        <!-- Rating -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between shadow-sm">
+            <div class="space-y-1">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Average Rating</span>
+                <h3 class="text-2xl font-extrabold text-slate-800">{{ avg_rating }}</h3>
+            </div>
+            <div class="bg-yellow-50 text-yellow-600 p-3 rounded-lg"><i class="fa-solid fa-star text-xl"></i></div>
+        </div>
+
+        <!-- Projects -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center justify-between shadow-sm">
+            <div class="space-y-1">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Assigned Projects</span>
+                <h3 class="text-2xl font-extrabold text-slate-800">{{ employee.projects.count }}</h3>
+            </div>
+            <div class="bg-green-50 text-green-600 p-3 rounded-lg"><i class="fa-solid fa-cubes-stack text-xl"></i></div>
+        </div>
+    </div>
+
+    <!-- Detail tabs sections -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Performance Reviews & Leaves -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Performance Reviews Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                    <h3 class="text-lg font-bold text-slate-800">Performance Reviews</h3>
+                    {% if request.user.userprofile.role == 'ADMIN' or request.user.userprofile.role == 'MANAGER' %}
+                        <a href="{% url 'review_create' %}?employee={{ employee.pk }}" class="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline">
+                            + Write Review
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="space-y-4">
+                    {% for review in reviews %}
+                        <div class="border-b border-slate-100 last:border-0 pb-4 last:pb-0 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="bg-purple-50 text-purple-700 text-xs font-bold px-2 py-0.5 rounded">
+                                    Overall Score: {{ review.overall_score }} ★
+                                </span>
+                                <span class="text-xs text-slate-400 font-medium">Review Date: {{ review.review_date|date:"Y-m-d" }}</span>
+                            </div>
+                            <div class="grid grid-cols-5 gap-1 text-[10px] text-slate-500 bg-slate-50 p-2 rounded-lg text-center">
+                                <div><strong>Prod:</strong> {{ review.productivity_score }}</div>
+                                <div><strong>Att:</strong> {{ review.attendance_score }}</div>
+                                <div><strong>Team:</strong> {{ review.teamwork_score }}</div>
+                                <div><strong>Comm:</strong> {{ review.communication_score }}</div>
+                                <div><strong>Tech:</strong> {{ review.technical_skills_score }}</div>
+                            </div>
+                            <p class="text-xs text-slate-600 font-medium"><strong>Comments:</strong> {{ review.comments|default:"-" }}</p>
+                            <p class="text-[10px] text-slate-400">Written by {{ review.reviewer.username }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="text-slate-400 text-sm text-center py-4 italic">No performance reviews recorded for this employee.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Leave History Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3">Leave History</h3>
+                <div class="space-y-3">
+                    {% for leave in leaves %}
+                        <div class="flex items-center justify-between text-xs border-b border-slate-50 pb-2.5 last:border-0 last:pb-0">
+                            <div>
+                                <h4 class="font-bold text-slate-800">{{ leave.get_leave_type_display }}</h4>
+                                <p class="text-slate-400">{{ leave.start_date }} to {{ leave.end_date }} • <span class="italic">Reason: {{ leave.reason }}</span></p>
+                            </div>
+                            <div>
+                                {% if leave.status == 'APPROVED' %}
+                                    <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-semibold">Approved</span>
+                                {% elif leave.status == 'REJECTED' %}
+                                    <span class="bg-red-50 text-red-700 px-2.5 py-0.5 rounded-full font-semibold">Rejected</span>
+                                {% else %}
+                                    <span class="bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full font-semibold">Pending</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-slate-400 text-sm text-center py-4 italic">No leaves requested yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Recent Attendance logs -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm self-start">
+            <h3 class="text-lg font-bold text-slate-800 mb-4 border-b border-slate-100 pb-3">Recent Attendance</h3>
+            <div class="space-y-3">
+                {% for att in attendances %}
+                    <div class="flex items-center justify-between text-xs border-b border-slate-50 pb-2.5 last:border-0 last:pb-0">
+                        <div>
+                            <span class="font-bold text-slate-800">{{ att.date }}</span>
+                            <span class="text-slate-400 block">
+                                {% if att.check_in %}In: {{ att.check_in|time:"h:i A" }}{% endif %}
+                                {% if att.check_out %} | Out: {{ att.check_out|time:"h:i A" }}{% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            {% if att.status == 'PRESENT' %}
+                                <span class="bg-green-50 text-green-700 px-2 py-0.5 rounded font-semibold">Present</span>
+                            {% elif att.status == 'ABSENT' %}
+                                <span class="bg-red-50 text-red-700 px-2 py-0.5 rounded font-semibold">Absent</span>
+                            {% elif att.status == 'HALF_DAY' %}
+                                <span class="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-semibold">Half Day</span>
+                            {% elif att.status == 'LEAVE' %}
+                                <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">On Leave</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-slate-400 text-sm text-center py-4 italic">No attendance records logged.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

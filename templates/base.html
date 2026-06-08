@@ -1,0 +1,228 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EPMS - Employee Performance Management System{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS (Play CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- DataTables TailWind Styling -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- D3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 sidebar-gradient text-slate-300 fixed inset-y-0 left-0 z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
+        <!-- Sidebar Header -->
+        <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg shadow-lg">
+                    <i class="fa-solid fa-chart-line text-lg"></i>
+                </div>
+                <span class="font-bold text-lg text-white tracking-wider">EPMS</span>
+            </a>
+            <button id="close-sidebar-button" class="lg:hidden text-slate-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Sidebar Navigation -->
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-gauge-high w-5 text-center"></i>
+                <span class="font-medium text-sm">Dashboard</span>
+            </a>
+
+            {% if request.user.userprofile.role == 'ADMIN' or request.user.userprofile.role == 'MANAGER' %}
+            <a href="{% url 'employee_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-users w-5 text-center"></i>
+                <span class="font-medium text-sm">Employees</span>
+            </a>
+            {% endif %}
+
+            <a href="{% url 'department_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-sitemap w-5 text-center"></i>
+                <span class="font-medium text-sm">Departments</span>
+            </a>
+
+            <a href="{% url 'project_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-folder-open w-5 text-center"></i>
+                <span class="font-medium text-sm">Projects</span>
+            </a>
+
+            <a href="{% url 'attendance_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-clock-rotate-left w-5 text-center"></i>
+                <span class="font-medium text-sm">Attendance</span>
+            </a>
+
+            <a href="{% url 'review_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-star-half-stroke w-5 text-center"></i>
+                <span class="font-medium text-sm">Performance</span>
+            </a>
+
+            <a href="{% url 'leave_list' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-calendar-plus w-5 text-center"></i>
+                <span class="font-medium text-sm">Leave Requests</span>
+            </a>
+
+            <a href="{% url 'analytics' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+                <span class="font-medium text-sm">Analytics</span>
+            </a>
+
+            {% if request.user.userprofile.role == 'ADMIN' or request.user.userprofile.role == 'MANAGER' %}
+            <a href="{% url 'reports' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-file-invoice w-5 text-center"></i>
+                <span class="font-medium text-sm">Reports</span>
+            </a>
+            {% endif %}
+
+            {% if request.user.userprofile.role == 'ADMIN' %}
+            <a href="{% url 'admin_settings' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-sliders w-5 text-center"></i>
+                <span class="font-medium text-sm">Settings</span>
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'profile' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition-all duration-200">
+                <i class="fa-solid fa-user-gear w-5 text-center"></i>
+                <span class="font-medium text-sm">My Profile</span>
+            </a>
+        </nav>
+        
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950/40">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold border border-slate-600 shadow-inner">
+                    {% if request.user.employee_profile.profile_picture %}
+                        <img src="{{ request.user.employee_profile.profile_picture.url }}" alt="Profile" class="w-full h-full rounded-full object-cover">
+                    {% else %}
+                        {{ request.user.username|slice:":1"|upper }}
+                    {% endif %}
+                </div>
+                <div class="overflow-hidden">
+                    <h4 class="font-semibold text-sm text-white truncate">
+                        {% if request.user.employee_profile %}
+                            {{ request.user.employee_profile.full_name }}
+                        {% else %}
+                            {{ request.user.username }}
+                        {% endif %}
+                    </h4>
+                    <p class="text-xs text-slate-500 capitalize truncate">{{ request.user.userprofile.role|lower }}</p>
+                </div>
+            </div>
+            
+            <!-- Secure Logout Form -->
+            <form action="{% url 'logout' %}" method="post" id="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="w-full bg-slate-800/60 hover:bg-red-600/20 hover:text-red-400 text-slate-400 py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 border border-slate-700/60 hover:border-red-500/20 transition-all duration-200 font-medium text-sm cursor-pointer">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Log Out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Main Content wrapper -->
+    <div class="flex-1 flex flex-col lg:pl-64 min-w-0 min-h-screen">
+        
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm">
+            <div class="flex items-center gap-4">
+                <button id="mobile-menu-button" class="lg:hidden text-slate-600 hover:text-slate-900 transition-colors p-2 rounded-lg hover:bg-slate-100">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div class="hidden md:flex items-center gap-2 text-sm text-slate-500">
+                    <i class="fa-solid fa-calendar text-blue-500"></i>
+                    <span id="current-date-span" class="font-medium">{% now "l, F j, Y" %}</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <span class="flex h-3 w-3 absolute top-0 right-0 -mt-1 -mr-1">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                    <div class="bg-slate-100 text-slate-700 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide flex items-center gap-1.5 border border-slate-200">
+                        <i class="fa-solid fa-shield-halved text-green-500"></i>
+                        <span class="capitalize">{{ request.user.userprofile.role }} Mode</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Panel Content -->
+        <main class="flex-1 p-6 md:p-8 space-y-6">
+            {% block content %}{% endblock %}
+        </main>
+        
+        <!-- Footer -->
+        <footer class="py-4 border-t border-slate-200 bg-white text-center text-xs text-slate-400">
+            <p>&copy; {% now "Y" %} EPMS. All rights reserved. Security and Role-Based Protection Active.</p>
+        </footer>
+    </div>
+
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    
+    <!-- Main JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    <!-- Django message alerts handled by SweetAlert2 -->
+    <script>
+        $(document).ready(function() {
+            {% if messages %}
+                {% for message in messages %}
+                    let type = "info";
+                    {% if message.tags == "success" %} type = "success";
+                    {% elif message.tags == "error" %} type = "error";
+                    {% elif message.tags == "warning" %} type = "warning";
+                    {% endif %}
+                    showToast(type, "{{ message|escapejs }}");
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

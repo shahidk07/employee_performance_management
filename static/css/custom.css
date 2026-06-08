@@ -1,0 +1,103 @@
+/* Custom Styles for EPMS */
+
+:root {
+    --font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: #f8fafc;
+}
+
+/* Glassmorphism utility */
+.glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-gradient {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+.brand-gradient-text {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Active link in Sidebar */
+.sidebar-link-active {
+    background: rgba(59, 130, 246, 0.15);
+    border-left: 4px solid #3b82f6;
+    color: #3b82f6 !important;
+}
+
+/* Transitions */
+.transition-all-300 {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* D3 Tooltip style */
+.d3-tooltip {
+    position: absolute;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(15, 23, 42, 0.95);
+    color: #fff;
+    border-radius: 6px;
+    pointer-events: none;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* DataTables Styling Overrides for Tailwind */
+.dataTables_wrapper .dataTables_length select {
+    padding-right: 2rem !important;
+    border-radius: 0.375rem !important;
+    border-color: #cbd5e1 !important;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 0.375rem !important;
+    border-color: #cbd5e1 !important;
+    padding: 0.375rem 0.75rem !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #3b82f6 !important;
+    color: white !important;
+    border: 1px solid #3b82f6 !important;
+    border-radius: 0.375rem !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #edf2f7 !important;
+    color: #1a202c !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 0.375rem !important;
+}

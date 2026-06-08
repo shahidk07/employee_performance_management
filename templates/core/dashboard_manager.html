@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manager Dashboard - EPMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Manager Dashboard</h1>
+            <p class="text-slate-500 text-sm">
+                Department Overview: <span class="font-semibold text-blue-600">{{ department.name|default:"General Management" }}</span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Stats Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1: Department Employees -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Dept Employees</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ total_dept_employees }}</h3>
+                <span class="text-xs text-slate-400 font-medium">Active staff</span>
+            </div>
+            <div class="bg-blue-50 text-blue-600 p-4 rounded-xl">
+                <i class="fa-solid fa-users text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- Card 2: Department Active Projects -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">My Active Projects</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ active_projects }}</h3>
+                <span class="text-xs text-green-500 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>In progress</span>
+                </span>
+            </div>
+            <div class="bg-emerald-50 text-emerald-600 p-4 rounded-xl">
+                <i class="fa-solid fa-layer-group text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- Card 3: Department Average Score -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Dept Avg Performance</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ avg_rating }}</h3>
+                <span class="text-xs text-yellow-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-star text-yellow-500"></i>
+                    <span>Out of 5.0 stars</span>
+                </span>
+            </div>
+            <div class="bg-yellow-50 text-yellow-600 p-4 rounded-xl">
+                <i class="fa-solid fa-star-half-stroke text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- Card 4: Pending Leaves -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Leaves to Approve</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ pending_leaves }}</h3>
+                <span class="text-xs text-amber-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>Awaiting approval</span>
+                </span>
+            </div>
+            <div class="bg-amber-50 text-amber-600 p-4 rounded-xl">
+                <i class="fa-solid fa-calendar-minus text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions & D3 Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Quick Actions Panel -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 mb-1">Quick Actions</h3>
+                <p class="text-slate-400 text-xs mb-4">Department management controls</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="{% url 'employee_list' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-address-book text-lg"></i>
+                        <span class="text-xs font-bold">Dept Directory</span>
+                    </a>
+                    <a href="{% url 'review_create' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-file-signature text-lg"></i>
+                        <span class="text-xs font-bold">Write Review</span>
+                    </a>
+                    <a href="{% url 'project_create' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-circle-plus text-lg"></i>
+                        <span class="text-xs font-bold">New Project</span>
+                    </a>
+                    <a href="{% url 'leave_list' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-calendar-check text-lg"></i>
+                        <span class="text-xs font-bold">Review Leaves</span>
+                    </a>
+                </div>
+            </div>
+            
+            {% if pending_leaves > 0 %}
+                <div class="mt-4 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="text-orange-500 animate-bounce">
+                            <i class="fa-solid fa-bell text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-orange-800">Leaves Awaiting Action</h4>
+                            <p class="text-[10px] text-orange-600">{{ pending_leaves }} request(s) require action.</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'leave_list' %}" class="text-xs font-bold text-orange-700 hover:underline">Manage</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- D3 Rating Chart -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Performance Ratings</h3>
+            <p class="text-slate-400 text-xs mb-4">Distribution of performance review scores</p>
+            <div id="rating-chart" class="h-56"></div>
+        </div>
+
+        <!-- D3 Project Progress Chart -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Project Progress</h3>
+            <p class="text-slate-400 text-xs mb-4">Current stage distribution of all projects</p>
+            <div id="project-chart" class="h-56"></div>
+        </div>
+    </div>
+
+    <!-- D3 Full Width Trend -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-800 mb-1">Attendance Trend</h3>
+        <p class="text-slate-400 text-xs mb-4">Department monthly attendance percentage</p>
+        <div id="attendance-chart" class="h-56"></div>
+    </div>
+
+    <!-- Recent Actions and logs -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Reviews in Department -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Department Reviews</h3>
+            <div class="space-y-4">
+                {% for review in recent_reviews %}
+                    <div class="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-600">
+                                {{ review.employee.full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-semibold text-slate-800">{{ review.employee.full_name }}</h4>
+                                <p class="text-[10px] text-slate-400">By {{ review.reviewer.username }} • {{ review.review_date }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 text-xs">
+                            <span class="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{{ review.overall_score }} ★</span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-slate-400 text-sm text-center py-4">No department reviews recorded yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Leave Requests in Department -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Department Leaves</h3>
+            <div class="space-y-4">
+                {% for leave in recent_leaves %}
+                    <div class="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-600">
+                                {{ leave.employee.full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-semibold text-slate-800">{{ leave.employee.full_name }}</h4>
+                                <p class="text-[10px] text-slate-400">{{ leave.get_leave_type_display }} • {{ leave.start_date }} to {{ leave.end_date }}</p>
+                            </div>
+                        </div>
+                        <div class="text-xs">
+                            {% if leave.status == 'APPROVED' %}
+                                <span class="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full font-semibold">Approved</span>
+                            {% elif leave.status == 'REJECTED' %}
+                                <span class="bg-red-50 text-red-700 px-2.5 py-0.5 rounded-full font-semibold">Rejected</span>
+                            {% else %}
+                                <span class="bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full font-semibold">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-slate-400 text-sm text-center py-4">No department leave requests logged yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/charts.js' %}"></script>
+{% endblock %}

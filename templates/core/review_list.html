@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Performance Reviews - EPMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Performance Reviews</h1>
+            <p class="text-slate-500 text-sm">Track evaluations, feedback logs, and performance rating distribution</p>
+        </div>
+        {% if request.user.userprofile.role == 'ADMIN' or request.user.userprofile.role == 'MANAGER' %}
+            <a href="{% url 'review_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm flex items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer">
+                <i class="fa-solid fa-star"></i>
+                <span>Submit Review</span>
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- Table Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+        <table class="w-full text-left border-collapse datatable">
+            <thead>
+                <tr class="border-b border-slate-100 text-slate-400 text-xs font-semibold uppercase">
+                    <th class="py-3 px-4">Employee</th>
+                    <th class="py-3 px-4">Review Date</th>
+                    <th class="py-3 px-4">Reviewer</th>
+                    <th class="py-3 px-4 text-center">Scores (P / A / T / C / TS)</th>
+                    <th class="py-3 px-4 text-center">Overall</th>
+                    <th class="py-3 px-4">Comments</th>
+                    {% if request.user.userprofile.role == 'ADMIN' or request.user.userprofile.role == 'MANAGER' %}
+                        <th class="py-3 px-4 text-right">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody class="text-slate-700 text-sm divide-y divide-slate-50">
+                {% for review in reviews %}
+                    <tr>
+                        <td class="py-4 px-4">
+                            <h4 class="font-bold text-slate-900 leading-tight">{{ review.employee.full_name }}</h4>
+                            <span class="text-xs text-slate-400 font-mono">{{ review.employee.employee_id }}</span>
+                        </td>
+                        <td class="py-4 px-4 text-xs font-semibold text-slate-500">
+                            {{ review.review_date|date:"Y-m-d" }}
+                        </td>
+                        <td class="py-4 px-4">{{ review.reviewer.get_full_name|default:review.reviewer.username }}</td>
+                        <td class="py-4 px-4 text-center text-xs text-slate-500 font-medium">
+                            {{ review.productivity_score }} / {{ review.attendance_score }} / {{ review.teamwork_score }} / {{ review.communication_score }} / {{ review.technical_skills_score }}
+                        </td>
+                        <td class="py-4 px-4 text-center">
+                            <span class="bg-purple-100 text-purple-700 px-2.5 py-1 rounded-md text-xs font-bold">{{ review.overall_score }} ★</span>
+                        </td>
+                        <td class="py-4 px-4 text-slate-500">
+                            <p class="line-clamp-1 italic text-xs">"{{ review.comments|default:"-" }}"</p>
+                        </td>
+                        {% if request.user.userprofile.role == 'ADMIN' or request.user.userprofile.role == 'MANAGER' %}
+                            <td class="py-4 px-4 text-right">
+                                <a href="{% url 'review_edit' review.pk %}" class="text-slate-500 hover:text-blue-600 p-1.5 hover:bg-blue-50 rounded transition-colors" title="Edit">
+                                    <i class="fa-solid fa-pen-to-square text-base"></i>
+                                </a>
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="py-8 text-center text-slate-400 italic">No reviews found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

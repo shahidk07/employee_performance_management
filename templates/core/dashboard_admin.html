@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - EPMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Admin Dashboard</h1>
+            <p class="text-slate-500 text-sm">System oversight, employee analytics, and organizational health metrics</p>
+        </div>
+    </div>
+
+    <!-- Stats Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1: Employees -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Active Employees</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ total_employees }}</h3>
+                <span class="text-xs text-green-500 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-trend-up"></i>
+                    <span>Stable workforce</span>
+                </span>
+            </div>
+            <div class="bg-blue-50 text-blue-600 p-4 rounded-xl">
+                <i class="fa-solid fa-user-tie text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- Card 2: Departments -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Departments</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ total_departments }}</h3>
+                <span class="text-xs text-blue-500 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-sitemap"></i>
+                    <span>Functional units</span>
+                </span>
+            </div>
+            <div class="bg-indigo-50 text-indigo-600 p-4 rounded-xl">
+                <i class="fa-solid fa-hotel text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- Card 3: Active Projects -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Active Projects</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ active_projects }}</h3>
+                <span class="text-xs text-green-500 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>On schedule</span>
+                </span>
+            </div>
+            <div class="bg-emerald-50 text-emerald-600 p-4 rounded-xl">
+                <i class="fa-solid fa-cubes text-2xl"></i>
+            </div>
+        </div>
+
+        <!-- Card 4: Average Score -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+            <div class="space-y-2">
+                <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Avg Performance</span>
+                <h3 class="text-3xl font-extrabold text-slate-800">{{ avg_rating }}</h3>
+                <span class="text-xs text-yellow-600 font-medium flex items-center gap-1">
+                    <i class="fa-solid fa-star text-yellow-500"></i>
+                    <span>Out of 5.0 stars</span>
+                </span>
+            </div>
+            <div class="bg-yellow-50 text-yellow-600 p-4 rounded-xl">
+                <i class="fa-solid fa-ranking-star text-2xl"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions & D3 Charts Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Quick Actions Panel -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 mb-1">Quick Actions</h3>
+                <p class="text-slate-400 text-xs mb-4">Common administration operations</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="{% url 'employee_create' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-user-plus text-lg"></i>
+                        <span class="text-xs font-bold">Add Employee</span>
+                    </a>
+                    <a href="{% url 'department_create' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-folder-plus text-lg"></i>
+                        <span class="text-xs font-bold">New Dept</span>
+                    </a>
+                    <a href="{% url 'project_create' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-screwdriver-wrench text-lg"></i>
+                        <span class="text-xs font-bold">New Project</span>
+                    </a>
+                    <a href="{% url 'review_create' %}" class="flex flex-col items-center gap-2 p-4 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-100 rounded-xl transition-all text-slate-700 hover:text-blue-600 cursor-pointer">
+                        <i class="fa-solid fa-clipboard-check text-lg"></i>
+                        <span class="text-xs font-bold">Log Review</span>
+                    </a>
+                </div>
+            </div>
+            
+            {% if pending_leaves > 0 %}
+                <div class="mt-4 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="text-orange-500 animate-bounce">
+                            <i class="fa-solid fa-circle-exclamation text-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-xs font-bold text-orange-800">Pending Actions</h4>
+                            <p class="text-[10px] text-orange-600">{{ pending_leaves }} leave request(s) await review</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'leave_list' %}" class="text-xs font-bold text-orange-700 hover:underline">Approve</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- D3 Rating Distribution Chart -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Performance Ratings</h3>
+            <p class="text-slate-400 text-xs mb-4">Distribution of performance review scores</p>
+            <div id="rating-chart" class="h-56"></div>
+        </div>
+
+        <!-- D3 Project Status Chart -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Project Progress</h3>
+            <p class="text-slate-400 text-xs mb-4">Current stage distribution of all projects</p>
+            <div id="project-chart" class="h-56"></div>
+        </div>
+    </div>
+
+    <!-- D3 Full Width Trend & Department Chart -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- D3 Attendance Trend Line Chart -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Attendance Trend</h3>
+            <p class="text-slate-400 text-xs mb-4">System-wide monthly attendance percentage</p>
+            <div id="attendance-chart" class="h-56"></div>
+        </div>
+
+        <!-- D3 Department Employee Horizontal Bar Chart -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-1">Department Sizes</h3>
+            <p class="text-slate-400 text-xs mb-4">Total number of active employees per department</p>
+            <div id="dept-chart" class="h-56"></div>
+        </div>
+    </div>
+
+    <!-- Recent Actions and logs -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Reviews -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Recent Reviews</h3>
+            <div class="space-y-4">
+                {% for review in recent_reviews %}
+                    <div class="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-600">
+                                {{ review.employee.full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-semibold text-slate-800">{{ review.employee.full_name }}</h4>
+                                <p class="text-[10px] text-slate-400">By {{ review.reviewer.username }} • {{ review.review_date }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 text-xs">
+                            <span class="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{{ review.overall_score }} ★</span>
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-slate-400 text-sm text-center py-4">No reviews recorded yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Recent Leave Requests -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Recent Leave Requests</h3>
+            <div class="space-y-4">
+                {% for leave in recent_leaves %}
+                    <div class="flex items-center justify-between border-b border-slate-50 pb-3 last:border-0 last:pb-0">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-xs text-slate-600">
+                                {{ leave.employee.full_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-semibold text-slate-800">{{ leave.employee.full_name }}</h4>
+                                <p class="text-[10px] text-slate-400">{{ leave.get_leave_type_display }} • {{ leave.start_date }} to {{ leave.end_date }}</p>
+                            </div>
+                        </div>
+                        <div class="text-xs">
+                            {% if leave.status == 'APPROVED' %}
+                                <span class="bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full font-semibold">Approved</span>
+                            {% elif leave.status == 'REJECTED' %}
+                                <span class="bg-red-50 text-red-700 px-2.5 py-0.5 rounded-full font-semibold">Rejected</span>
+                            {% else %}
+                                <span class="bg-amber-50 text-amber-700 px-2.5 py-0.5 rounded-full font-semibold">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% empty %}
+                    <p class="text-slate-400 text-sm text-center py-4">No leave requests logged yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/charts.js' %}"></script>
+{% endblock %}

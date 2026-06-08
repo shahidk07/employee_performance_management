@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Attendance History - EPMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">Attendance Log</h1>
+            <p class="text-slate-500 text-sm">Monitor check-in times and shift completion status</p>
+        </div>
+        
+        <!-- Employee check-in/out quick controls on the list view too -->
+        {% if request.user.userprofile.role == 'EMPLOYEE' %}
+            <div class="flex gap-2">
+                <form action="{% url 'attendance_check_in' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm shadow-md transition-all cursor-pointer">
+                        Check In
+                    </button>
+                </form>
+                <form action="{% url 'attendance_check_out' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg text-sm shadow-md transition-all cursor-pointer">
+                        Check Out
+                    </button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Table Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+        <table class="w-full text-left border-collapse datatable">
+            <thead>
+                <tr class="border-b border-slate-100 text-slate-400 text-xs font-semibold uppercase">
+                    <th class="py-3 px-4">Employee</th>
+                    <th class="py-3 px-4">Date</th>
+                    <th class="py-3 px-4">Check In</th>
+                    <th class="py-3 px-4">Check Out</th>
+                    <th class="py-3 px-4">Status</th>
+                </tr>
+            </thead>
+            <tbody class="text-slate-700 text-sm divide-y divide-slate-50">
+                {% for att in attendances %}
+                    <tr>
+                        <td class="py-4 px-4 font-semibold text-slate-900">
+                            {{ att.employee.full_name }}
+                            <span class="text-xs text-slate-400 font-normal block font-mono">{{ att.employee.employee_id }}</span>
+                        </td>
+                        <td class="py-4 px-4">{{ att.date }}</td>
+                        <td class="py-4 px-4 font-mono text-xs">{{ att.check_in|default:"-" }}</td>
+                        <td class="py-4 px-4 font-mono text-xs">{{ att.check_out|default:"-" }}</td>
+                        <td class="py-4 px-4">
+                            {% if att.status == 'PRESENT' %}
+                                <span class="bg-green-50 text-green-700 px-2.5 py-0.5 rounded text-xs font-semibold">Present</span>
+                            {% elif att.status == 'LATE' %}
+                                <span class="bg-yellow-50 text-yellow-700 px-2.5 py-0.5 rounded text-xs font-semibold">Late</span>
+                            {% elif att.status == 'ABSENT' %}
+                                <span class="bg-red-50 text-red-700 px-2.5 py-0.5 rounded text-xs font-semibold">Absent</span>
+                            {% elif att.status == 'HALF_DAY' %}
+                                <span class="bg-orange-50 text-orange-700 px-2.5 py-0.5 rounded text-xs font-semibold">Half Day</span>
+                            {% elif att.status == 'ON_LEAVE' %}
+                                <span class="bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded text-xs font-semibold">On Leave</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-slate-400 italic">No attendance records logged yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
